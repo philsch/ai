@@ -71,11 +71,12 @@ Unknown fields are ignored by each tool, so both can coexist in the same file.
 
 Skills and sub-agents solve different problems:
 
-| Aspect        | Skill                                          | Sub-Agent                                             |
-|---------------|------------------------------------------------|-------------------------------------------------------|
-| What it is    | Reusable instructions, knowledge, or workflows | Isolated worker with its own context                  |
-| Key benefit   | Share content across contexts                  | Context isolation — only a summary returns to caller  |
-| Best for      | Reference material, invocable workflows        | Tasks that read many files, parallel work, specialized workers |
+| Aspect      | Skill                                                                     | Sub-Agent                                                      |
+|-------------|---------------------------------------------------------------------------|----------------------------------------------------------------|
+| What it is  | Reusable instructions, knowledge, or workflows                            | Isolated worker with its own context                           |
+| Key benefit | Share content across contexts                                             | Context isolation — only a summary returns to caller           |
+| Interaction | Interactive — runs inside the main agent, which keeps talking to the user | Autonomous — works on its own and presents a finished outcome  |
+| Best for    | Reference material, invocable workflows                                   | Tasks that read many files, parallel work, specialized workers |
 
 **Skills** come in two flavours:
 
