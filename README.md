@@ -89,19 +89,25 @@ Skills and sub-agents solve different problems:
 
 Symlink the directories into your AI tool's config location. Back up any existing directories first.
 
+### Codex CLI
+
+```bash
+mkdir -p ~/.codex
+ln -s /path/to/ai/skills ~/.codex/skills
+```
+
+### Claude Code / GitHub Copilot CLI
+
+```bash
+ln -s /path/to/ai/skills ~/.claude
+ln -s /path/to/ai/agents ~/.claude
+```
+
 ### Cursor
 
 ```bash
 ln -s /path/to/ai/skills ~/.cursor/
 ln -s /path/to/ai/agents ~/.cursor/
-```
-
-### Claude Code
-
-```bash
-# Adjust target path once Claude Code conventions are established
-ln -s /path/to/ai/skills ~/.claude
-ln -s /path/to/ai/agents ~/.claude
 ```
 
 ### Removing symlinks
