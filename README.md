@@ -78,7 +78,7 @@ Skills and sub-agents solve different problems:
 | Interaction | Interactive — runs inside the main agent, which keeps talking to the user | Autonomous — works on its own and presents a finished outcome  |
 | Best for    | Reference material, invocable workflows                                   | Tasks that read many files, parallel work, specialized workers |
 
-**Skills** come in two flavours:
+**Skills** come in two flavors:
 
 - **Reference skills** provide knowledge the agent uses throughout a session (e.g., an API style guide).
 - **Action skills** tell the agent to do something specific (e.g., a `/deploy` workflow).
@@ -89,6 +89,22 @@ Skills and sub-agents solve different problems:
 
 Symlink the directories into your AI tool's config location. Back up any existing directories first.
 
+### Codex CLI
+
+```bash
+mkdir -p ~/.codex
+ln -s /path/to/ai/skills ~/.codex/
+ln -s /path/to/ai/agents ~/.codex/
+```
+
+### Claude Code / GitHub Copilot CLI
+
+```bash
+mkdir -p ~/.claude
+ln -s /path/to/ai/skills ~/.claude/
+ln -s /path/to/ai/agents ~/.claude/
+```
+
 ### Cursor
 
 ```bash
@@ -96,18 +112,11 @@ ln -s /path/to/ai/skills ~/.cursor/
 ln -s /path/to/ai/agents ~/.cursor/
 ```
 
-### Claude Code
-
-```bash
-# Adjust target path once Claude Code conventions are established
-ln -s /path/to/ai/skills ~/.claude
-ln -s /path/to/ai/agents ~/.claude
-```
-
 ### Removing symlinks
 
+To remove a symlink without deleting the repo contents, use `rm` on the link itself (adjust the path for your tool):
+
 ```bash
-# Removes only the symlink, not the repo contents
 rm ~/.cursor/skills
 rm ~/.cursor/agents
 ```
