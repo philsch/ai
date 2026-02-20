@@ -27,7 +27,7 @@ description: "Audits and fixes npm security vulnerabilities in repositories cont
 
 ## Step 3: Fix (only after user approval)
 
-1. **Create a feature branch.** If a Jira ticket is provided, use `feat/<ticket>-npm-fix`. Otherwise use `feat/<timestamp>-npm-fix` (e.g. `feat/20260217-npm-fix`).
+1. **Create a feature branch.** If a Jira ticket is provided, use `chore/<ticket>-npm-fix`. Otherwise use `chore/<timestamp>-npm-fix` (e.g. `chore/20260217-npm-fix`).
 2. **Record current package versions** — capture the relevant sections of `package-lock.json` or `npm ls` output so changes can be compared later.
 3. Run `npm audit fix` to apply automatic fixes.
 4. **Verify the project still builds and passes tests** after applying fixes:
@@ -38,9 +38,11 @@ description: "Audits and fixes npm security vulnerabilities in repositories cont
    - **Linting:** If a lint script exists (`npm run lint`), run it to catch any new issues (e.g. updated type definitions that trigger lint rules).
    - **Re-run `npm audit --json`** and confirm the targeted vulnerabilities are resolved. Report any remaining or newly introduced advisories back to the user.
    - If any of the above checks fail, include the findings in the report created in the next step.
-5. **Compare new vs. old package versions.** For each updated package:
+5. **Research breaking changes** for each updated package:
    - Identify the version change (e.g. `1.2.3 → 1.3.0`).
-   - Search the package's changelog or release notes (GitHub releases, npm page, or CHANGELOG.md) for **potential breaking changes** between the old and new versions.
+   - Find the package's GitHub repository via `npm view <pkg> repository.url` or `npm view <pkg> homepage`.
+   - Fetch GitHub release notes for each version in the range using the URL pattern `https://github.com/<owner>/<repo>/releases/tag/v<version>`. If the page fails to load, fall back to fetching `CHANGELOG.md` directly via `https://raw.githubusercontent.com/<owner>/<repo>/main/CHANGELOG.md`.
+   - Summarise any **breaking changes, behaviour changes, or API removals** found between the old and new versions.
 6. Summarize findings for the user. If there are were issues detected earlier, make suggestions on how to follow up. Only continue with Phase 3 after review by the user.
 
 ## Step 4: PR Preparation
@@ -52,7 +54,7 @@ description: "Audits and fixes npm security vulnerabilities in repositories cont
    - Any manual follow-up items (e.g. packages that could not be auto-fixed, or breaking changes that need testing).
 3. Present the draft to the user for review before creating the PR.
 
-## Step 5: PR Preparation
+## Step 5: PR Creation
 
 1. Git push the changes and retrieve the URL to create a PR if provided from the remote server
 2. Show a summary and offer the copy the PR message into the users clipboard, so they can create the PR manually.
