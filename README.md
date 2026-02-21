@@ -89,6 +89,15 @@ Skills and sub-agents solve different problems:
 
 Symlink the directories into your AI tool's config location. Back up any existing directories first.
 
+Installation can be **system-wide** (e.g. `~/.claude/`) or **project-specific**
+(e.g. `.claude/` inside a project repo). System-wide installation makes skills
+available in every project; project-specific installation scopes them to a single
+repo.
+
+This repository recommends system-wide installation — the skills here are written
+to be broadly useful regardless of project. Use project-specific installation only
+for skills that apply to one repository.
+
 ### Codex CLI
 
 ```bash
@@ -120,10 +129,3 @@ To remove a symlink without deleting the repo contents, use `rm` on the link its
 rm ~/.cursor/skills
 rm ~/.cursor/agents
 ```
-
-## Conventions
-
-- **Skill names**: lowercase, hyphens, max 64 characters (e.g., `git-commit-messages`)
-- **Agent names**: lowercase, hyphens, matching the filename (e.g., `code-reviewer.md`)
-- **Descriptions**: specific, third-person, include trigger terms for when the agent should apply the skill/agent
-- **Keep SKILL.md under 500 lines** — use separate reference files for detailed content
