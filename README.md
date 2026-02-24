@@ -10,7 +10,7 @@ Central repository for managing AI agent skills and sub-agents. Designed to be s
 | `git-branch-workflow` | Best practices for creating, naming, and managing Git branches. |
 | `create-pull-request` | Creates a draft pull request. |
 | `list-pull-requests` | Lists all open pull requests and their descriptions for a repository. |
-| `fix-npm-security-vulnerabilities` | Audits and fixes npm security vulnerabilities in repositories containing a package.json. |
+| `fix-npm-security-vulnerabilities` | Full workflow: audits and fixes npm security vulnerabilities in repositories containing a package.json, through changelog review and PR creation. |
 
 ## Symlink Setup
 
