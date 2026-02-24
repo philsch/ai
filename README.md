@@ -2,6 +2,61 @@
 
 Central repository for managing AI agent skills and sub-agents. Designed to be symlinked into tool-specific configuration directories (Cursor, Claude Code, etc.).
 
+## Skills Overview
+
+| Skill | Description |
+|-------|-------------|
+| `git-commit-messages` | Commit message structure, wording, and conventions. |
+| `git-branch-workflow` | Best practices for creating, naming, and managing Git branches. |
+| `create-pull-request` | Creates a draft pull request. |
+| `list-pull-requests` | Lists all open pull requests and their descriptions for a repository. |
+| `fix-npm-security-vulnerabilities` | Full workflow: audits and fixes npm security vulnerabilities in repositories containing a package.json, through changelog review and PR creation. |
+
+## Symlink Setup
+
+Symlink the directories into your AI tool's config location. Back up any existing directories first.
+
+Installation can be **system-wide** (e.g. `~/.claude/`) or **project-specific**
+(e.g. `.claude/` inside a project repo). System-wide installation makes skills
+available in every project; project-specific installation scopes them to a single
+repo.
+
+This repository recommends system-wide installation — the skills here are written
+to be broadly useful regardless of project. Use project-specific installation only
+for skills that apply to one repository.
+
+### Codex CLI
+
+```bash
+mkdir -p ~/.codex
+ln -s /path/to/ai/skills ~/.codex/
+ln -s /path/to/ai/agents ~/.codex/
+```
+
+### Claude Code / GitHub Copilot CLI
+
+```bash
+mkdir -p ~/.claude
+ln -s /path/to/ai/skills ~/.claude/
+ln -s /path/to/ai/agents ~/.claude/
+```
+
+### Cursor
+
+```bash
+ln -s /path/to/ai/skills ~/.cursor/
+ln -s /path/to/ai/agents ~/.cursor/
+```
+
+### Removing symlinks
+
+To remove a symlink without deleting the repo contents, use `rm` on the link itself (adjust the path for your tool):
+
+```bash
+rm ~/.cursor/skills
+rm ~/.cursor/agents
+```
+
 ## Structure
 
 ```
@@ -84,48 +139,3 @@ Skills and sub-agents solve different problems:
 - **Action skills** tell the agent to do something specific (e.g., a `/deploy` workflow).
 
 **Sub-agents** are useful when you need context isolation or when the context window is getting full. A sub-agent might read dozens of files or run extensive searches, but the main conversation only receives a summary.
-
-## Symlink Setup
-
-Symlink the directories into your AI tool's config location. Back up any existing directories first.
-
-Installation can be **system-wide** (e.g. `~/.claude/`) or **project-specific**
-(e.g. `.claude/` inside a project repo). System-wide installation makes skills
-available in every project; project-specific installation scopes them to a single
-repo.
-
-This repository recommends system-wide installation — the skills here are written
-to be broadly useful regardless of project. Use project-specific installation only
-for skills that apply to one repository.
-
-### Codex CLI
-
-```bash
-mkdir -p ~/.codex
-ln -s /path/to/ai/skills ~/.codex/
-ln -s /path/to/ai/agents ~/.codex/
-```
-
-### Claude Code / GitHub Copilot CLI
-
-```bash
-mkdir -p ~/.claude
-ln -s /path/to/ai/skills ~/.claude/
-ln -s /path/to/ai/agents ~/.claude/
-```
-
-### Cursor
-
-```bash
-ln -s /path/to/ai/skills ~/.cursor/
-ln -s /path/to/ai/agents ~/.cursor/
-```
-
-### Removing symlinks
-
-To remove a symlink without deleting the repo contents, use `rm` on the link itself (adjust the path for your tool):
-
-```bash
-rm ~/.cursor/skills
-rm ~/.cursor/agents
-```
