@@ -59,11 +59,48 @@ From the output, extract the exact `name@version` to install for the selected pa
 
 ### Step 3.3 — Apply the fix
 
-Run: `npm install <name>@<version>`
+**Before running `npm install`, check whether `<name>` is already listed as a direct dependency** in root `package.json` under `dependencies`, `devDependencies`, or `optionalDependencies`.
 
-Then run `npm install` if `package.json` was modified (to sync the lockfile).
+- **If it is a direct dependency:** run `npm install <name>@<version>` to update it in place. Then run `npm install` if `package.json` was modified (to sync the lockfile). Skip Steps 3.4 and 3.5, proceed to **Step 3.6** (Verify).
+- **If it is NOT a direct dependency:** skip `npm install` here. Do not run `npm install <name>@<version>`, as that would add it as a new direct dependency. Instead, proceed to **Step 3.4** to check whether a parent direct dependency can be updated to transitively resolve the vulnerability before falling back to overrides.
 
-### Step 3.4 — Verify
+### Step 3.4 — Try resolving indirect dependency via parent update
+
+**Run only when the fixed package is NOT a direct dependency** (skipped `npm install` in Step 3.3). If the package was a direct dependency, skip this step and proceed to Step 3.6.
+
+1. **Identify parents:** Run `npm ls <package> --all --json` to map which packages directly depend on `<package>`. Extract each immediate parent from the tree.
+
+2. **Filter to direct parents:** From those parents, keep only those that appear as a key in root `package.json` under `dependencies`, `devDependencies`, or `optionalDependencies`. Discard any transitively-introduced parents. If none remain, skip this step and proceed to Step 3.5.
+
+3. **Find non-breaking updates for each direct parent:** For each direct parent `<parentPkg>`:
+   - Run `npm view <parentPkg> versions --json` to list all published versions.
+   - Determine the currently installed version from `package-lock.json`.
+   - A **non-breaking candidate** is any published version that shares the **same major version** and is **greater than** the currently installed version.
+   - For each non-breaking candidate (starting from the highest), inspect whether it would resolve `<package>` to `>= <fixVersion>` (from Step 3.2). Use `npm view <parentPkg>@<candidate> dependencies --json` or simulate with `npm install <parentPkg>@<candidate> --dry-run` to check.
+   - Record the **lowest viable candidate** (prefer the smallest bump to reduce risk).
+
+4. **Decision:**
+   - **If at least one direct parent has a viable non-breaking update:** Choose the parent with the smallest version bump. Run:
+     ```
+     npm install <parentPkg>@<resolvedCandidateVersion>
+     ```
+     **Skip Step 3.5** - do not add an override. Proceed to **Step 3.6** (Verify).
+   - **If no direct parent has a viable non-breaking update** (all require a major bump or none exist): Proceed to **Step 3.5** (overrides).
+
+### Step 3.5 — Check/add overrides for indirect dependencies
+
+**Run only when both conditions are true:** (a) the fixed package is not a direct dependency (not in root `package.json` under `dependencies`, `devDependencies`, or `optionalDependencies`), AND (b) Step 3.4 found no viable non-breaking parent update. If the package was direct, or if Step 3.4 successfully resolved the vulnerability via a parent update, skip this step entirely.
+
+1. **Confirm indirect:** Check that the fixed package name is not listed in root `package.json` dependencies/devDependencies/optionalDependencies. If it is, skip this step.
+2. **Discover parent paths:** Use `npm ls <package> --all` (or parse `package-lock.json`'s `packages` / lockfile v3 structure) to list which parent packages depend on `<package>` and at what depth. Record for each occurrence: parent chain or top-level parent, and the resolved version after fix (the fix version from Step 3.2 is the target version to lock).
+3. **Decide global vs path overrides:**
+   - If the package appears under **only one** parent path, or under multiple parents but the **same** fixed version applies to all: add or extend a **single top-level** override: `"<package>": "<fix-version>"`.
+   - If the package appears under **multiple parents** and the tree indicates **different versions** are required for different parents: use **path overrides** so each parent gets the correct version, e.g. `"overrides": { "parentA": { "<package>": "<versionA>" }, "parentB": { "<package>": "<versionB>" } }`. Optionally scope by parent version with `parent@version` if needed.
+4. **Merge with existing overrides:** If `package.json` already has an `overrides` object, extend it: add the new key(s) without removing or overwriting unrelated overrides. If the project has no existing `overrides`, create the `overrides` object. Preserve existing nesting (e.g. existing path overrides under the same parent); nested keys follow npm's override semantics.
+5. **Apply and re-sync:** After editing `package.json`, run `npm install` to apply overrides and update the lockfile.
+6. When overrides were added or extended, note it for the status block in Step 3.8 (e.g. path overrides for parentA, parentB, or global override for `<package>@<version>`).
+
+### Step 3.6 — Verify
 
 - `npx tsc --noEmit` (TypeScript projects only)
 - `npm run build` (if build script exists)
@@ -73,21 +110,25 @@ Then run `npm install` if `package.json` was modified (to sync the lockfile).
 
 If any check fails, report the failure details to the user and **pause for guidance** before continuing.
 
-### Step 3.5 — Research breaking changes
+### Step 3.7 — Research breaking changes
 
 - Get repo URL via `npm view <pkg> repository.url` or `npm view <pkg> homepage`.
 - Fetch GitHub release notes for the version range using the URL pattern `https://github.com/<owner>/<repo>/releases/tag/v<version>`. If the page fails to load, fall back to fetching `CHANGELOG.md` directly via `https://raw.githubusercontent.com/<owner>/<repo>/main/CHANGELOG.md`.
 - Summarise any **breaking changes, behaviour changes, or API removals** found between the old and new versions.
 
-### Step 3.6 — Report and wait for review
+### Step 3.8 — Report and wait for review
 
 Present a single-package status block:
 ```
 lodash 4.17.20 → 4.17.21
   Verification: build OK, tests OK, lint OK
+  Resolution: <only if indirect dep — omit for direct deps — one of:>
+    - "parent <parentPkg> bumped to <version> (transitively resolves <package>)" — Step 3.4 path
+    - "added global override for <package>@<fixVersion>" — Step 3.5 path
+    - "added path overrides for <parentA>, <parentB>" — Step 3.5 path, multiple parents
   Breaking changes: none
 ```
-Include any failures or breaking changes found. **Wait for user review before moving to Step 4.**
+Include any failures or breaking changes found. When the fixed package is direct, omit the Resolution line. When Step 3.4 resolved the issue via a parent update, note the parent bump. When Step 3.5 ran, note the override details. **Wait for user review before moving to Step 4.**
 
 ## Step 4: PR Preparation
 
