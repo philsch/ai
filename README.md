@@ -11,6 +11,7 @@ Central repository for managing AI agent skills and sub-agents. Designed to be s
 | `create-pull-request` | Creates a draft pull request. |
 | `list-pull-requests` | Lists all open pull requests and their descriptions for a repository. |
 | `fix-npm-security-vulnerabilities` | Full workflow: audits and fixes npm security vulnerabilities in repositories containing a package.json, through changelog review and PR creation. |
+| `slack` | Interact with Slack - read conversations, threads, and messages, and reply to messages. |
 
 ## Symlink Setup
 
