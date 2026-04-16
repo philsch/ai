@@ -85,6 +85,10 @@ The following characters **must always be escaped** in message text before sendi
 
 No other characters require escaping.
 
+### Message style
+
+- Do not use `!` in your messages as this gets escaped by Slack
+
 ### Markdown-style formatting
 
 Slack uses its own formatting syntax (not standard Markdown):
@@ -207,6 +211,8 @@ If the user does not provide a permalink but has already read a message in this 
 ### Step 2 — Compose the reply text
 
 Use the reply text provided by the user exactly as given. Do not paraphrase or modify it.
+
+**Greeting rule:** If the thread already contains a message authored by the current user (i.e. the authenticated user's ID appears as `user` on any existing reply), omit any opening greeting such as "Hi <name>" or "Hey <name>" from the reply.
 
 **Before sending, always show the user a preview of the message and ask for confirmation.** Only proceed after explicit approval.
 
