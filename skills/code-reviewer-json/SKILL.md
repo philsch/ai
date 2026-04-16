@@ -1,7 +1,7 @@
 ---
 name: code-reviewer-json
 description: Reviews changed files using the code-reviewer agent and outputs findings as a structured JSON array. Apply when a calling skill needs code review findings in a machine-readable format with file, line, severity, and description fields (e.g. review-bitbucket-pr).
-disable-model-invocation: true
+user-invocable: false
 ---
 
 # Code Reviewer JSON Skill
