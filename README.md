@@ -19,7 +19,7 @@ Central repository for managing AI agent skills and sub-agents. Designed to be s
 
 ### JSON Output Skills
 
-Skills intended for programmatic use by other skills. They return structured JSON and have `disable-model-invocation: true` set so they are only invoked explicitly via `/skill-name`.
+Skills intended for programmatic use by other skills. They return structured JSON and have `user-invocable: false` set so they are hidden from the `/` menu and only invoked by other skills.
 
 | Skill | Description |
 |-------|-------------|
