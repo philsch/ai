@@ -106,7 +106,7 @@ are retrieved.
 From each comment that contains an `inline` field, record a tuple of:
 `{ path: inline.path, line: inline.to, snippet: content.raw (first 120 chars) }`
 
-Store this as `<existing-inline-comments>` for use in Step 8.
+Store this as `<existing-inline-comments>` for use in Step 9.
 
 ## Step 5 — Fetch changed files and diff
 
@@ -152,8 +152,10 @@ Parse the unified diff text to build `<diff-lines>`, a map of
    - If it starts with `-` (removed line): do not increment `<current-new-line>`.
 4. Repeat for every hunk and every file in the diff.
 
-This map is used in Step 10 to decide whether a finding can be posted as an inline
-comment (line is in the diff) or must fall back to a general PR-level comment.
+Only `+` lines count as changed. Context lines inside a hunk are unchanged code.
+
+This map defines the review scope: Step 7 passes it to the agent, Step 8 drops every
+finding outside it, and Step 11 uses it to anchor inline comments.
 
 ## Step 6 — Check out source branch into a temp directory
 
@@ -169,14 +171,76 @@ how to proceed.
 
 ## Step 7 — Run code review
 
-Invoke the `/code-reviewer-json` skill with `<changed-files>` and `<review-dir>` as inputs.
+For each file in `<changed-files>`, read its full contents from `<review-dir>`. Also read
+any `CLAUDE.md` files present in the repository root or in the directories of the changed
+files.
 
-The skill returns a JSON array of findings with the structure:
-`{ file, line, severity ("must-fix" | "suggestion"), description }`
+Convert `<diff-lines>` into changed line ranges per file (e.g.
+`errors.ts: 2, 10-14`). Store as `<changed-ranges>`.
 
-## Step 8 — Filter against existing comments
+Invoke the `code-reviewer` agent on those file contents and any `CLAUDE.md` rules as
+context. Also pass `<review-dir>` and `<changed-ranges>`, and instruct the agent:
 
-For each finding from Step 7, check `<existing-inline-comments>`:
+- It may read any file in `<review-dir>`, in particular sibling modules of the same kind
+  and imported modules, to compare conventions and placement.
+- Files and lines outside `<changed-ranges>` are **reference only**. They may be cited as
+  evidence in a description, but never be the target of a finding.
+- Every finding must anchor on a line in `<changed-ranges>`. A placement finding anchors
+  on the misplaced definition in the changed file and names the target file in the
+  description.
+
+Instruct the agent to return findings as a JSON array and nothing else, omitting nits.
+These are suggestions, not nits, and must be kept:
+
+- Comment-quality findings (verbose, narrative, or drift-prone inline comments)
+- Placement and cohesion findings on added or changed code (a definition in a file whose
+  responsibility does not match it, or organized differently from sibling modules)
+
+Each entry must have exactly these fields:
+
+```json
+[
+  {
+    "file": "<file-path-relative-to-review-dir>",
+    "line": <last line of the affected range>,
+    "line_from": <first line of the affected range — omit for single-line findings>,
+    "scope": "file — omit unless the finding concerns the changed file as a whole",
+    "severity": "must-fix" | "suggestion",
+    "description": "<concise description with suggested fix>",
+    "suggestion": "<replacement code — omit when no concrete replacement can be given>"
+  }
+]
+```
+
+- `severity` must be exactly `"must-fix"` or `"suggestion"`
+- `line` is the last (or only) line of the affected range in the new (source branch) version of the file
+- `line_from` must be set when the finding spans more than one line; omit it for single-line findings
+- `scope` is set to `"file"` only for findings about a changed file as a whole that no single line can carry (e.g. a new client without a test file). Omit it otherwise
+- `suggestion` must only be populated when the agent can provide a correct, self-contained replacement snippet; leave it absent otherwise
+- `description` must be self-contained — it will be posted verbatim as a PR comment
+- If there are no findings, return an empty array: `[]`
+
+## Step 8 — Filter to the diff
+
+Do not rely on the agent instruction alone. Check every finding from Step 7 against
+`<diff-lines>`:
+
+| Finding | Handling |
+|---|---|
+| `file` not in `<diff-lines>` | Drop |
+| `scope` is `"file"` and `file` is in `<diff-lines>` | Keep |
+| `line`, or for multi-line findings any line from `line_from` to `line`, is in `<diff-lines>[file]` | Keep |
+| Otherwise (changed file, but the range touches no added line) | Drop |
+
+Store the dropped findings as `<out-of-diff-findings>`. They are shown in Step 10 but
+never posted.
+
+For a kept multi-line finding whose `line` is not itself an added line, move `line` to the
+last added line within the range, so the inline anchor in Step 11 is valid.
+
+## Step 9 — Filter against existing comments
+
+For each finding kept in Step 8, check `<existing-inline-comments>`:
 
 - If any existing comment targets the same `path` and its `line` is within ±5 lines of
   the finding's line, consider the finding already covered.
@@ -185,7 +249,7 @@ For each finding from Step 7, check `<existing-inline-comments>`:
 
 Remove covered findings from the list. Count them separately as `<already-covered-count>`.
 
-## Step 9 — Present findings and wait for user confirmation
+## Step 10 — Present findings and wait for user confirmation
 
 Display the filtered findings grouped by severity:
 
@@ -198,9 +262,15 @@ Display the filtered findings grouped by severity:
 1. [<file>:<line>] <description>
 2. ...
 
+## Outside the diff, not posted
+- [<file>:<line>] <description>
+
 ## Already covered by existing comments
 <already-covered-count> finding(s) skipped.
 ```
+
+Omit the "Outside the diff" section when `<out-of-diff-findings>` is empty. Its entries are
+unnumbered and cannot be selected for posting.
 
 If no findings remain after filtering, tell the user:
 
@@ -216,16 +286,35 @@ Otherwise, ask the user which findings to post:
 > - A comma-separated list of numbers (e.g. `1, 3`) to post specific items
 > - `cancel` — do not post anything
 
-Wait for the user's reply before proceeding to Step 10.
+Wait for the user's reply before proceeding to Step 11.
 
-## Step 10 — Post accepted findings as inline comments
+## Step 11 — Post accepted findings as inline comments
 
 For each accepted finding, determine the comment type:
 
-- If `finding.file` is in `<diff-lines>` and `finding.line` is in
-  `<diff-lines>[finding.file]` — post as an **inline** comment.
-- Otherwise — post as a **general** PR-level comment, prefixing the description with
-  `[<file>:<line>]`.
+- If `scope` is `"file"` — post as a **general** PR-level comment, prefixing the
+  description with `[<file>]`.
+- Otherwise — post as an **inline** comment. Step 8 guarantees that `finding.line` is in
+  `<diff-lines>[finding.file]`.
+
+Never post a finding that did not pass Step 8.
+
+### Building the comment body
+
+- **Without `suggestion`:** use plain text only: `🤖 <description>`
+- **With `suggestion`:** append the replacement snippet in a fenced suggestion block.
+  The value of `content.raw` must be:
+
+      🤖 <description>
+
+      ```suggestion
+      <suggestion>
+      ```
+
+### Building the `inline` object
+
+- **Single-line** (`line_from` absent or equal to `line`): include only `"to": <line>`.
+- **Multi-line** (`line_from` present and less than `line`): include both `"from": <line_from>` and `"to": <line>`.
 
 ### Inline comment
 
@@ -235,8 +324,9 @@ curl -X POST \
   -H 'Accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
-    "content": { "raw": "🤖 <description>" },
+    "content": { "raw": "<comment-body>" },
     "inline": {
+      "from": <line_from — only for multi-line findings>,
       "to": <line>,
       "path": "<file>"
     }
@@ -252,7 +342,7 @@ curl -X POST \
   -H 'Accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
-    "content": { "raw": "🤖 [<file>:<line>] <description>" }
+    "content": { "raw": "🤖 [<file>] <description>" }
   }' \
   'https://api.bitbucket.org/2.0/repositories/<workspace>/<repo-slug>/pullrequests/<pr-id>/comments'
 ```

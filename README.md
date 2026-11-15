@@ -17,14 +17,6 @@ Central repository for managing AI agent skills and sub-agents. Designed to be s
 | `code-reviewer` | Reviews changed files and presents findings as a human-readable report grouped by severity. |
 | `review-bitbucket-pr` | Reviews a Bitbucket pull request end-to-end and posts accepted findings as inline comments on the PR. |
 
-### JSON Output Skills
-
-Skills intended for programmatic use by other skills. They return structured JSON and have `user-invocable: false` set so they are hidden from the `/` menu and only invoked by other skills.
-
-| Skill | Description |
-|-------|-------------|
-| `code-reviewer-json` | Reviews changed files and outputs findings as a structured JSON array (`file`, `line`, `severity`, `description`). Used by `review-bitbucket-pr`. |
-
 ## Agents Overview
 
 | Agent | Description |
