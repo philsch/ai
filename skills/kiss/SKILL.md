@@ -1,6 +1,6 @@
 ---
 name: "kiss"
-description: "Keep It Simple, Stupid review. Challenges whether a change or design is the simplest solution to the actual problem and whether a future maintainer will understand it, while never trading away security or stability. Reviews code (current branch diff, PR, or given files) and design documents. Reports findings with concrete simpler alternatives, then applies the ones the user approves. Use whenever the user says kiss, asks if something is over-engineered, too complex, too clever, gold-plated, or asks for a simpler way, a simplicity review, a complexity check, YAGNI check, or wants to know if a design or implementation could be leaner, even if they do not say 'kiss'."
+description: "Keep It Simple, Stupid review. Challenges whether a change or design is the simplest solution to the actual problem and whether a future maintainer will understand it, while never trading away security or stability. Reviews code (current branch diff, PR, or given files) and design documents. Replies with findings and concrete simpler alternatives, leaving the next step to the user. Use whenever the user says kiss, asks if something is over-engineered, too complex, too clever, gold-plated, or asks for a simpler way, a simplicity review, a complexity check, YAGNI check, or wants to know if a design or implementation could be leaner, even if they do not say 'kiss'."
 ---
 
 # KISS Review
@@ -33,7 +33,7 @@ If the stated problem is vague, note that as the first finding. Most over-engine
 
 ## Step 3: Mark the load-bearing parts
 
-Before looking for simplifications, list the parts of the solution that exist for security or stability (see Ground rules). These are off-limits for removal. Keep this list, it goes into the report so the reader can see what was deliberately protected.
+Before looking for simplifications, list the parts of the solution that exist for security or stability (see Ground rules). These are off-limits for removal. Keep this list, it goes into the reply so the reader can see what was deliberately protected.
 
 ## Step 4: Challenge the approach
 
@@ -58,3 +58,18 @@ Only for code. Typical accidental complexity:
 - **Premature optimization:** caches, pooling, batching, or custom data structures without a measured need.
 - **Reinvented wheels:** hand-written versions of what the language, framework, or an already-used library provides.
 - **Clever code:** dense functional chains, metaprogramming, reflection, regex where a plain loop or string method is clearer.
+
+## Step 6: Reply to the user
+
+Answer directly in the conversation. Do not write a report file, post PR comments, or change code.
+
+Structure the reply as:
+
+1. **Verdict:** one line, either "Simple enough" or "Simpler options exist".
+2. **Problem:** the one- or two-sentence problem statement and hard constraints from Step 2.
+3. **Load-bearing parts:** the security and stability parts from Step 3 that were deliberately left alone.
+4. **Findings:** approach-level findings first, then implementation-level ones. For each, give the location (`file:line` or doc section), what is more complex than needed, the concrete simpler alternative, and what it removes (concepts, moving parts, lines). Number them so the user can refer to them.
+
+Keep it short. Skip empty sections, and do not pad a "Simple enough" verdict with minor nitpicks.
+
+Then stop. What happens next, such as applying fixes or commenting on a PR, is the user's decision.
