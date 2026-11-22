@@ -16,6 +16,7 @@ Central repository for managing AI agent skills and sub-agents. Designed to be s
 | `slack` | Interact with Slack - read conversations, threads, and messages, and reply to messages. |
 | `code-reviewer` | Reviews changed files and presents findings as a human-readable report grouped by severity. |
 | `review-bitbucket-pr` | Reviews a Bitbucket pull request end-to-end and posts accepted findings as inline comments on the PR. |
+| `kiss` | Keep It Simple, Stupid review: challenges whether a change or design is the simplest solution to the actual problem, without trading away security or stability. |
 
 ## Agents Overview
 
